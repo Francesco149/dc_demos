@@ -1,0 +1,97 @@
+#!/bin/sh
+
+if [ "x${KOS_BASE}" = "x" ]; then
+    echo "please source your KOS environ.sh"
+    exit 1
+fi
+
+dir="$(dirname "${0}")"
+dir="$(realpath "${dir}")"
+elfname="$(basename ${dir})"
+
+export WINEARCH=win32
+export WINEPREFIX="${HOME}/.dctools"
+
+info() {
+    printf ":: \033[01;32m${@}\033[00m\n"
+}
+
+error() {
+    printf "!! \033[01;31m${@}\033[00m\n"
+}
+
+stfu() {
+    "${@}" > /dev/null 2>&1
+    return ${?}
+}
+
+scramble() {
+    "${KOS_BASE}/utils/scramble/scramble" "${@}"
+}
+
+cdi4dc() {
+    wine "${KOS_BASE}/utils/cdi4dc/cdi4dc.exe" "${@}"
+}
+
+ipbuild() {
+    wine "${KOS_BASE}/utils/ipbuild/ipbuild.exe" "${@}"
+}
+
+logrun() {
+    pn="${1}"
+    shift
+    echo "args: ${@}" > "${pn}.log" 2>&1
+
+    if ! "${pn}" "${@}" >> "${pn}.log" 2>&1; then
+        error "${pn} failed"
+        cat "${pn}.log"
+        return 1
+    fi
+}
+
+build() {
+    while [ ! -e IP.BIN ]; do
+        info "you haven't created IP.BIN, running ipbuild"
+        ipbuild || return ${?}
+    done
+
+    info "compiling"
+    logrun make || return ${?}
+
+    info "converting to bin"
+    stfu rm output.bin
+    sh-elf-objcopy -R .stack -O binary "${elfname}.elf" output.bin \
+        || return ${?}
+
+    stfu rm -rf iso/
+    mkdir iso/ || return ${?}
+
+    info "scrambling"
+    scramble output.bin iso/1ST_READ.BIN || return ${?}
+
+    info "creating iso"
+    logrun \
+        mkisofs \
+        -C 0,11702 \
+        -V DC_GAME \
+        -G IP.BIN \
+        -r -J -l \
+        -o "${elfname}.iso" \
+        iso/ \
+        || return ${?}
+
+    info "creating cdi"
+    logrun cdi4dc "${elfname}.iso" "${elfname}.cdi" || return ${?}
+
+    info "done! now throw ${elfname}.cdi on an emulator or burn it"
+}
+
+olddir="$(pwd)"
+cd "${dir}"""
+
+time build
+result=$?
+
+cd "${olddir}"
+
+exit $result

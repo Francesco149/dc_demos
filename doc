@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# TODO: don't rely on GNU find
+
+/usr/bin/find \
+    . -name *.c \
+    -printf "cat %p | sed -e '/^\$/,\$d' | sed 's|^[/* ]*||g' \
+             > \$(dirname \$(realpath %p))/README.md\n" \
+| sh

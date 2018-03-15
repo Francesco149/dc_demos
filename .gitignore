@@ -1,0 +1,13 @@
+*~
+/obj2h/obj2h
+*.BIN
+*.log
+*.json
+*.obj
+*.cdi
+*.elf
+*.iso
+*.o
+*.bsv
+*.bin
+*.img
