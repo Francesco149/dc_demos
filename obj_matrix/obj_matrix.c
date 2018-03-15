@@ -20,7 +20,6 @@
  */
 
 #include <kos.h>
-#include <kmg/kmg.h>
 
 KOS_INIT_FLAGS(INIT_DEFAULT);
 

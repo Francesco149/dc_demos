@@ -36,7 +36,6 @@
     STRINGIFY(VERSION_PATCH)
 
 #include <kos.h>
-#include <kmg/kmg.h>
 #include <math.h>
 
 KOS_INIT_FLAGS(INIT_DEFAULT);
